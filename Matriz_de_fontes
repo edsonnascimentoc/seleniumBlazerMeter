@@ -1,0 +1,21 @@
+# Context7 References
+
+## Selenium
+/seleniumhq/selenium
+
+## Docker Selenium
+/seleniumhq/docker-selenium
+
+## Docker
+/docker/docs
+/docker/compose
+/docker/cli
+
+## Taurus
+/blazemeter/taurus
+
+## Grafana
+/grafana/grafana
+
+## Grafana MCP
+/grafana/mcp-grafana
