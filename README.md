@@ -1,6 +1,18 @@
 # seleniumBlazerMeter
 
-Projeto de experimentação e validação de uma arquitetura de testes de carga com Selenium Grid, Docker, Taurus/BlazeMeter e observabilidade.
+Projeto de experimentação e validação de uma **arquitetura de carga baseada em Docker + Selenium Grid + Taurus**, com observabilidade e foco adicional na caracterização de capacidade, saturação, ciclo de vida dos processos e correlação entre carga, consumo de recursos e comportamento do ambiente.
+
+## Arquitetura do PoC
+
+A arquitetura do PoC deve ser entendida como uma cadeia integrada de geração, distribuição e execução de carga:
+
+- **Taurus**: camada de definição/orquestração das execuções de carga e dos cenários de teste;
+- **Selenium Grid**: camada de distribuição das sessões WebDriver entre os nós;
+- **Chrome Nodes**: camada de execução dos navegadores;
+- **Docker**: isolamento e gerenciamento dos componentes da infraestrutura;
+- **Prometheus/Grafana**: observabilidade e correlação de métricas da infraestrutura e da execução.
+
+Portanto, a caracterização de carga deste PoC não é apenas "Docker + Selenium Grid": **Taurus faz parte da arquitetura de carga e deve ser considerado nas campanhas, nos gates temporais e na análise causal dos resultados**.
 
 ## Estado do projeto — 22/09/2026
 
@@ -67,6 +79,16 @@ Também foi executado um ciclo de 10 sessões. Ao final:
 
 > **Status da validação:** a campanha forneceu evidência positiva de estabilidade do ciclo de vida das sessões, mas o conjunto de logs da campanha de 10 sessões não registra individualmente, de forma completa, criação/navegação/encerramento de cada sessão. Portanto, a evidência atual deve ser tratada como **validação parcial**, não como prova definitiva de ausência do problema sob carga sustentada.
 
+### Relação com Taurus
+
+As campanhas de carga devem considerar explicitamente o Taurus como parte do caminho causal:
+
+`Taurus → Selenium/WebDriver → Selenium Grid → Chrome Node → navegador`
+
+e, em paralelo, a observabilidade deve acompanhar a infraestrutura Docker e os componentes do Grid.
+
+Isso é importante porque uma execução manual de uma sessão Selenium valida apenas uma parte do caminho. A validação do PoC sob carga precisa demonstrar o comportamento do conjunto **Taurus + Selenium Grid + Chrome Nodes + Docker**, preservando a correlação temporal entre início da carga, ocupação de slots, execução das sessões, encerramento e estado dos processos.
+
 ## Evidências locais
 
 As evidências da execução permanecem no ambiente de teste em:
@@ -82,12 +104,14 @@ Entre os artefatos estão snapshots de processos, estado do Grid, registros de z
 A próxima etapa é uma campanha de validação mais rigorosa, com instrumentação completa do ciclo:
 
 1. estado dos nós antes da sessão;
-2. criação da sessão;
-3. navegação/atividade;
-4. encerramento explícito;
-5. estado dos processos imediatamente após;
-6. estado dos processos após intervalo de estabilização;
-7. estado final do Grid.
+2. início controlado da execução Taurus;
+3. criação da sessão;
+4. navegação/atividade;
+5. encerramento explícito;
+6. estado dos processos imediatamente após;
+7. estado dos processos após intervalo de estabilização;
+8. estado final do Grid;
+9. correlação com métricas de infraestrutura e ocupação de slots.
 
 O critério objetivo de sucesso é a ausência de processos zombie e de processos de browser/driver residuais após o encerramento das sessões, mantendo o Grid operacional e os dois nós disponíveis.
 
