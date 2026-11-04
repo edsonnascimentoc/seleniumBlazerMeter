@@ -1,0 +1,19 @@
+# Campanha homologada em 2026-11-04 — Taurus CLI 1.17.1
+# O runner pytest executa a classe unittest.TestCase do test_esxi.py.
+execution:
+  - executor: selenium
+    runner: pytest
+    scenario: esxi_script
+    concurrency: 2
+    ramp-up: 20s
+    hold-for: 3m
+
+scenarios:
+  esxi_script:
+    script: /home/edsonc/test_esxi.py
+
+reporting:
+  - module: console
+  - module: final-stats
+    summary: true
+    percentiles: true
