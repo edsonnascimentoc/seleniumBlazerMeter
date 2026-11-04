@@ -1,0 +1,140 @@
+# Docker Compose para a PoC Taurus + Selenium Grid 4 + observabilidade.
+# A configuração preserva os limites de recursos definidos para a campanha.
+
+name: seleniumblazermeter
+
+networks:
+  e03_selenium-grid:
+    driver: bridge
+    name: e03_selenium-grid
+
+volumes:
+  prometheus_data:
+  grafana_data:
+
+services:
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: node-exporter
+    restart: unless-stopped
+    ports:
+      - "0.0.0.0:9100:9100"
+    cpus: 0.15
+    mem_limit: 64m
+    networks:
+      - e03_selenium-grid
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: cadvisor
+    restart: unless-stopped
+    privileged: true
+    ports:
+      - "8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    command:
+      - --housekeeping_interval=10s
+      - --max_housekeeping_interval=15s
+      - --disable_metrics=disk,diskIO,network,tcp,udp,percpu,sched,process
+      - --docker_only=true
+    cpus: 0.10
+    mem_limit: 128m
+    networks:
+      - e03_selenium-grid
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: prometheus
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=2h
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    cpus: 0.30
+    mem_limit: 256m
+    networks:
+      - e03_selenium-grid
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    cpus: 0.20
+    mem_limit: 192m
+    networks:
+      - e03_selenium-grid
+
+  selenium-hub:
+    image: selenium/hub:4.48.0-20260905
+    container_name: selenium-hub
+    restart: unless-stopped
+    ports:
+      - "4444:4444"
+      - "4442:4442"
+      - "4443:4443"
+    environment:
+      JAVA_OPTS: "-Xms128m -Xmx256m"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4444/status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 25s
+    cpus: 0.30
+    mem_limit: 384m
+    networks:
+      - e03_selenium-grid
+
+  chrome-node-1:
+    image: selenium/node-chrome:4.48.0-20260905
+    container_name: chrome-node-1
+    init: true
+    shm_size: 512mb
+    restart: unless-stopped
+    environment:
+      SE_EVENT_BUS_HOST: selenium-hub
+      SE_EVENT_BUS_PUBLISH_PORT: "4442"
+      SE_EVENT_BUS_SUBSCRIBE_PORT: "4443"
+      SE_NODE_MAX_SESSIONS: "1"
+      JAVA_OPTS: "-Xms128m -Xmx384m"
+    depends_on:
+      selenium-hub:
+        condition: service_healthy
+    cpus: 0.60
+    mem_limit: 900m
+    networks:
+      - e03_selenium-grid
+
+  chrome-node-2:
+    image: selenium/node-chrome:4.48.0-20260905
+    container_name: chrome-node-2
+    init: true
+    shm_size: 512mb
+    restart: unless-stopped
+    environment:
+      SE_EVENT_BUS_HOST: selenium-hub
+      SE_EVENT_BUS_PUBLISH_PORT: "4442"
+      SE_EVENT_BUS_SUBSCRIBE_PORT: "4443"
+      SE_NODE_MAX_SESSIONS: "1"
+      JAVA_OPTS: "-Xms128m -Xmx384m"
+    depends_on:
+      selenium-hub:
+        condition: service_healthy
+    cpus: 0.60
+    mem_limit: 900m
+    networks:
+      - e03_selenium-grid
