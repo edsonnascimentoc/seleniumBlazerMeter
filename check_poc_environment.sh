@@ -54,9 +54,8 @@ fi
 LOAD_1MIN=$(awk '{print $1}' /proc/loadavg 2>/dev/null || printf 'desconhecido')
 if [[ "$LOAD_1MIN" != desconhecido ]]; then
   log_pass "Load Average (1m): $LOAD_1MIN"
-  LOAD_INT=${LOAD_1MIN%%.*}
-  if [[ "$CPU_COUNT" -gt 0 && "$LOAD_INT" -gt "$CPU_COUNT" ]]; then
-    log_warn "Load average inteiro excede a quantidade de vCPUs; interpretar como possível pressão transitória."
+  if [[ "$CPU_COUNT" -gt 0 ]] && awk -v load="$LOAD_1MIN" -v cpus="$CPU_COUNT" 'BEGIN { exit !(load > cpus) }'; then
+    log_warn "Load average (1m) excede a quantidade de vCPUs; interpretar como possível pressão transitória."
   fi
 else
   log_warn "Load average indisponível."
