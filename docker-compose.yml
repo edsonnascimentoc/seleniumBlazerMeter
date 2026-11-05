@@ -1,5 +1,10 @@
 # Docker Compose para a PoC Taurus + Selenium Grid 4 + observabilidade.
 # A configuração preserva os limites de recursos definidos para a campanha.
+# Os limites de CPU somam 2.25 vCPU (acima das 2 vCPUs da VM): são tetos
+# individuais, não reserva; pode ocorrer contenção/compartilhamento sob pico.
+# Chrome Nodes usam shm_size=512mb. O teste Python também define
+# --disable-dev-shm-usage, direcionando Chrome a usar armazenamento temporário
+# em vez do /dev/shm convencional; não interpretar shm_size isoladamente.
 
 name: seleniumblazermeter
 
