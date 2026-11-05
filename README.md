@@ -43,7 +43,15 @@ Caminho de carga: `Taurus → pytest → Selenium WebDriver → Selenium Hub →
 | Duração informada | 03min27s |
 | Exit code Taurus | `0` |
 
-> **Nota sobre a duração:** os horários de início e término informados correspondem a 3min42s de diferença, enquanto o dossiê informa duração total de 3min27s. Os valores foram preservados conforme fornecidos; conferir o log original se a duração exata for usada em análises temporais.
+> **Nota sobre a duração:** 11:32:06–11:35:48 corresponde aritmeticamente a **3min42s**, enquanto o dossiê informa **3min27s**. Esta revisão não escolhe um dos valores sem o log original do Taurus. Para análises temporais, usar o timestamp do log como fonte primária e corrigir este registro após conferência.
+
+## Recursos e contenção da VM
+
+A VM de referência possui **2 vCPUs e 4 GB de RAM**. Os limites individuais de CPU declarados no Compose somam **2,25 vCPU** (node-exporter 0,15; cAdvisor 0,10; Prometheus 0,30; Grafana 0,20; Hub 0,30; Chrome Node 1 0,60; Chrome Node 2 0,60). Esses valores são **limites máximos individuais, não reservas dedicadas**; o Docker pode compartilhar CPU e haverá contenção quando a demanda simultânea superar a capacidade da VM. Isso é uma característica do ambiente PoC, não uma alegação de capacidade para cargas maiores.
+
+### Memória compartilhada do Chrome
+
+O Compose configura `shm_size: 512mb` em cada Chrome Node. O script Selenium também usa `--disable-dev-shm-usage`, que instrui o Chrome a evitar o `/dev/shm` convencional e utilizar um diretório temporário alternativo. Portanto, o valor de `shm_size` não deve ser interpretado isoladamente como a memória efetivamente utilizada pelo navegador. A configuração é mantida como parte do ambiente reportado; alterações devem ser avaliadas por nova execução funcional.
 
 ## Resultado homologado — campanha de 04/11/2026
 
