@@ -1,5 +1,7 @@
 # Campanha homologada em 2026-11-04 — Taurus CLI 1.17.1
+# Host: loadtester-lab (2 vCPUs / 4 GB RAM)
 # O runner pytest executa a classe unittest.TestCase do test_esxi.py.
+
 execution:
   - executor: selenium
     runner: pytest
@@ -10,7 +12,7 @@ execution:
 
 scenarios:
   esxi_script:
-    script: /home/edsonc/test_esxi.py
+    script: test_esxi.py
 
 reporting:
   - module: console

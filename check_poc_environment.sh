@@ -25,6 +25,17 @@ http_body() {
   curl --silent --show-error --fail --connect-timeout "${2:-3}" --max-time "${3:-10}" "$1" 2>/dev/null
 }
 
+MISSING_DEPS=0
+
+for cmd in docker curl jq awk nproc pgrep grep wc tr systemctl; do
+  require_cmd "$cmd" || MISSING_DEPS=1
+done
+
+if [[ "$MISSING_DEPS" -ne 0 ]]; then
+  echo "[ERRO] Dependências obrigatórias ausentes; auditoria interrompida." >&2
+  exit 1
+fi
+
 echo "======================================================================"
 echo "      AUDITORIA DO AMBIENTE POC (loadtester-lab)"
 echo "======================================================================"
@@ -69,8 +80,6 @@ fi
 
 echo
 echo "--- [2/5] Docker Engine e ferramentas de diagnóstico ---"
-for cmd in docker curl jq; do require_cmd "$cmd" || true; done
-
 if command -v systemctl >/dev/null 2>&1 && systemctl is-active --quiet docker; then
   DOCKER_VER=$(docker --version 2>/dev/null | awk '{print $3}' | tr -d ',')
   log_pass "Docker Engine ativo (${DOCKER_VER:-versão não identificada})."
@@ -87,7 +96,10 @@ fi
 echo
 echo "--- [3/5] Selenium Grid 4: readiness e Nodes ---"
 GRID_STATUS=$(http_body "http://127.0.0.1:4444/status" 3 8 || true)
-if [[ -z "$GRID_STATUS" ]] || ! printf '%s' "$GRID_STATUS" | jq -e '.value.ready | type == "boolean"' >/dev/null 2>&1; then
+if [[ -z "$GRID_STATUS" ]] || ! printf '%s' "$GRID_STATUS" | jq -e '
+  (.value.ready | type == "boolean")
+  and (.value.nodes | type == "array")
+' >/dev/null 2>&1; then
   log_fail "Selenium Hub inacessível ou resposta /status inválida."
 else
   GRID_READY=$(printf '%s' "$GRID_STATUS" | jq -r '.value.ready')
@@ -170,10 +182,10 @@ HTTP_CODE=000
 if command -v docker >/dev/null 2>&1; then
   HTTP_CODE=$(docker exec chrome-node-1 curl -sk --connect-timeout 5 --max-time 10 -o /dev/null -w '%{http_code}' https://10.1.100.102/ 2>/dev/null || printf '000')
 fi
-if [[ "$HTTP_CODE" == 200 ]]; then
-  log_pass "Chrome Node acessa ESXi com HTTP 200."
+if [[ "$HTTP_CODE" == 200 || "$HTTP_CODE" == 302 ]]; then
+  log_pass "Chrome Node acessa ESXi com HTTP $HTTP_CODE."
 else
-  log_fail "Acesso do chrome-node-1 ao ESXi retornou HTTP $HTTP_CODE (esperado 200)."
+  log_fail "Acesso do chrome-node-1 ao ESXi retornou HTTP $HTTP_CODE (esperado 200 ou 302)."
 fi
 
 echo "======================================================================"
