@@ -225,3 +225,35 @@ Evidências históricas locais:
 - [Docker Compose Specification](https://compose-spec.io/)
 - [Selenium Grid](https://www.selenium.dev/documentation/grid/)
 - [Matriz_de_fontes](./Matriz_de_fontes)
+
+---
+
+## PAE — automacao funcional (Ciclo 01)
+
+O projeto passa a incluir uma trilha funcional independente para o ambiente
+de desenvolvimento do PAE Ambulante. O primeiro ciclo cobre Login Unico,
+portal de servicos, cartao `card_pae_ambulante` e chegada a
+`/Solicitacao/Local`.
+
+- Plano e casos do ciclo: [docs/PAE_CICLO_01.md](docs/PAE_CICLO_01.md).
+- Execucao requer Selenium Grid ativo e autenticacao manual pelo noVNC.
+- Nenhum CPF ou senha e armazenado pelo teste.
+- Nenhum cadastro, envio de documento ou solicitacao de vaga e realizado.
+- Ciclo 01 homologado em 13/11/2026: 1 teste funcional aprovado.
+- Resultado: `1 passed` em 96,22 segundos.
+- A autenticacao do Login Unico e manual pelo operador via noVNC.
+- Os cinco casos CT-PAE-001 a CT-PAE-005 foram verificados.
+- Evidencias, limites e correcao do seletor estao em
+  [docs/PAE_CICLO_01.md](docs/PAE_CICLO_01.md).
+- `test_esxi.py` e `taurus-esxi-poc.yml` permanecem preservados como trilha
+  historica da POC ESXi/Taurus.
+- A campanha Taurus homologada nao foi alterada: 2 VUs, ramp-up de 20s,
+  hold-for de 3m. Este ciclo nao inicia campanha de carga.
+
+Para executar o teste manual:
+
+```bash
+PYTHONPATH="/home/edsonc/.bzt/python-packages/3.13.5" \\
+python3 -m pytest -m pae_manual_auth -s -v \\
+  tests/functional/test_acesso_pae.py
+```
