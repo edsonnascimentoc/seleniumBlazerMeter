@@ -1,8 +1,10 @@
 # seleniumBlazerMeter
 
-PoC de geração de carga funcional com **Taurus CLI 1.17.1 + Selenium 4 + Selenium Grid 4 + Chrome**, com Docker e observabilidade por Prometheus/Grafana. O foco é medir o tempo de navegação/renderização DOM da aplicação VMware ESXi, caracterizar o comportamento com dois browsers concorrentes e auditar o ciclo de vida dos processos nos Chrome Nodes.
+Repositório de prova de conceito (PoC) com duas trilhas independentes: **testes funcionais do PAE Ambulante com Selenium** e **campanha histórica de carga funcional da aplicação VMware ESXi com Taurus, Selenium Grid e Chrome**. A infraestrutura utiliza Docker e inclui coleta de métricas por Prometheus, cAdvisor e Node Exporter, com visualização no Grafana. Os resultados e limites de cada trilha são documentados separadamente.
 
 ## Arquitetura
+
+A arquitetura funcional atual e suas limitações estão descritas em [docs/ARQUITETURA_ATUAL.md](docs/ARQUITETURA_ATUAL.md). O diagrama abaixo representa especificamente a campanha histórica Taurus/ESXi de 04/11/2026; ele não representa o fluxo funcional do PAE.
 
 ```mermaid
 flowchart LR
@@ -23,9 +25,9 @@ flowchart LR
 - **Selenium Hub**: distribui sessões pelos Nodes disponíveis.
 - **Chrome Nodes**: executam o Chrome headless; cada Node aceita uma sessão simultânea (`SE_NODE_MAX_SESSIONS=1`).
 - **Docker Compose**: mantém os serviços na rede `e03_selenium-grid`; `init: true` nos Nodes faz o `docker-init` atuar como PID 1 e recolher processos filhos.
-- **Node Exporter/cAdvisor → Prometheus → Grafana**: coletam e apresentam métricas do host e dos containers. O arquivo `prometheus.yml` configura os três alvos de scraping: `node-exporter:9100`, `cadvisor:8080` e `prometheus:9090`.
+- **cAdvisor → Prometheus → Grafana**: coleta e apresenta métricas dos containers. O Node Exporter também é alvo do Prometheus (`node-exporter:9100`), mas sua configuração observada em container, sem os mounts e o namespace PID do host, não permite tratar as séries `node_*` como métricas verificadas da VM Debian. O arquivo `prometheus.yml` configura os três alvos: `node-exporter:9100`, `cadvisor:8080` e `prometheus:9090`.
 
-Caminho de carga: `Taurus → pytest → Selenium WebDriver → Selenium Hub → Chrome Node → Chrome → ESXi`.
+Caminho da campanha histórica Taurus/ESXi: `Taurus → pytest → Selenium WebDriver → Selenium Hub → Chrome Node → Chrome → ESXi`. A trilha funcional PAE é independente e está documentada em [docs/PAE_CICLO_01.md](docs/PAE_CICLO_01.md).
 
 ## Ambiente homologado
 
@@ -120,7 +122,9 @@ container_memory_working_set_bytes{name=~"chrome-node.*"} / 1024 / 1024
 count by (name) (container_last_seen{name=~"chrome-node.*|selenium-hub"})
 ```
 
-### Node Exporter — host
+### Node Exporter — séries node_* (host não validado)
+
+> **Limitação de interpretação:** o Node Exporter observado está executando em container sem os mounts e o namespace PID do host. Portanto, as séries `node_load*` e `node_memory_*` abaixo são mantidas como consultas históricas do dossiê, mas não devem ser interpretadas como load average ou memória física comprovados da VM Debian. A origem efetiva dessas métricas precisa ser validada antes de qualquer uso operacional.
 
 **Load average de 1 minuto:**
 
@@ -146,7 +150,7 @@ node_load5
 up{job=~"node-exporter|cadvisor|prometheus"}
 ```
 
-> As expressões acima são as consultas registradas como homologadas no dossiê da campanha. A série `container_*` depende da configuração de coleta do cAdvisor e dos labels efetivamente expostos; validar o resultado no Prometheus quando houver alteração de versão/configuração.
+> As expressões acima são as consultas registradas no dossiê histórico da campanha. As séries `container_*` dependem da configuração de coleta do cAdvisor e dos labels efetivamente expostos. A consulta `up` indica disponibilidade dos alvos de scraping, não comprova a correção semântica das métricas. As consultas `node_*` permanecem sem validação como métricas do host, conforme a ressalva acima. Validar os resultados no Prometheus após alterações de versão ou configuração.
 
 ## Configuração e execução
 
@@ -220,6 +224,8 @@ Evidências históricas locais:
 
 ## Referências
 
+- [Arquitetura atual e limites observados](docs/ARQUITETURA_ATUAL.md)
+- [Plano e evidências do PAE — Ciclo 01](docs/PAE_CICLO_01.md)
 - [Taurus — Selenium Executor](https://gettaurus.org/docs/Selenium/)
 - [Taurus — Execution Settings](https://gettaurus.org/docs/ExecutionSettings/)
 - [Docker Compose Specification](https://compose-spec.io/)
