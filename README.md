@@ -25,7 +25,7 @@ flowchart LR
 - **Selenium Hub**: distribui sessões pelos Nodes disponíveis.
 - **Chrome Nodes**: executam o Chrome headless; cada Node aceita uma sessão simultânea (`SE_NODE_MAX_SESSIONS=1`).
 - **Docker Compose**: mantém os serviços na rede `e03_selenium-grid`; `init: true` nos Nodes faz o `docker-init` atuar como PID 1 e recolher processos filhos.
-- **cAdvisor → Prometheus → Grafana**: coleta e apresenta métricas dos containers. O Node Exporter também é alvo do Prometheus (`node-exporter:9100`), mas sua configuração observada em container, sem os mounts e o namespace PID do host, não permite tratar as séries `node_*` como métricas verificadas da VM Debian. O arquivo `prometheus.yml` configura os três alvos: `node-exporter:9100`, `cadvisor:8080` e `prometheus:9090`.
+- **cAdvisor → Prometheus → Grafana**: coleta e apresenta métricas dos containers. O Node Exporter também é alvo do Prometheus (`node-exporter:9100`). A validação do runtime mostrou que algumas fontes do kernel (`/proc/meminfo`, `/proc/stat` e os três campos de load average de `/proc/loadavg`) correspondem aos dados globais observados no host; já `df -hT` apresenta a visão de filesystem do container (`overlay`/`tmpfs`), não o inventário do host. Portanto, a interpretação das séries `node_*` deve ser feita por coletor, conforme [a validação de observabilidade](docs/ARQUITETURA_ATUAL.md#43-limites-de-interpretação-das-métricas). O arquivo `prometheus.yml` configura os três alvos: `node-exporter:9100`, `cadvisor:8080` e `prometheus:9090`.
 
 Caminho da campanha histórica Taurus/ESXi: `Taurus → pytest → Selenium WebDriver → Selenium Hub → Chrome Node → Chrome → ESXi`. A trilha funcional PAE é independente e está documentada em [docs/PAE_CICLO_01.md](docs/PAE_CICLO_01.md).
 
@@ -122,9 +122,11 @@ container_memory_working_set_bytes{name=~"chrome-node.*"} / 1024 / 1024
 count by (name) (container_last_seen{name=~"chrome-node.*|selenium-hub"})
 ```
 
-### Node Exporter — séries node_* (host não validado)
+### Node Exporter — interpretação das séries `node_*`
 
-> **Limitação de interpretação:** o Node Exporter observado está executando em container sem os mounts e o namespace PID do host. Portanto, as séries `node_load*` e `node_memory_*` abaixo são mantidas como consultas históricas do dossiê, mas não devem ser interpretadas como load average ou memória física comprovados da VM Debian. A origem efetiva dessas métricas precisa ser validada antes de qualquer uso operacional.
+> **Resultado da validação do runtime:** o Node Exporter executa em container com namespaces PID e cgroup privados, sem mounts explícitos dos diretórios do host e com limite de memória de 64 MiB (limite configurado de memória + swap: 128 MiB). Apesar desse isolamento, as leituras comparativas mostraram correspondência de fontes globais do kernel: `MemTotal` e `SwapTotal` idênticos aos do host, valores dinâmicos de memória/swap muito próximos, contadores agregados de CPU de `/proc/stat` próximos e os três campos de load average de `/proc/loadavg` iguais. Os campos finais de tarefas/PID de `/proc/loadavg` diferem.
+>
+> **Limite confirmado:** `df -hT` dentro do container apresenta `overlay` e `tmpfs`, não a visão do filesystem raiz do host (`/dev/sda1` em `/`). Assim, `node_filesystem_*` não está validado como inventário do host. As métricas de rede também não foram comparadas com as interfaces do host, e `node_uname_info` identificou o hostname do container. A validação é específica às fontes e ao snapshot observado; não autoriza generalizar para todas as séries `node_*`.
 
 **Load average de 1 minuto:**
 
@@ -150,7 +152,7 @@ node_load5
 up{job=~"node-exporter|cadvisor|prometheus"}
 ```
 
-> As expressões acima são as consultas registradas no dossiê histórico da campanha. As séries `container_*` dependem da configuração de coleta do cAdvisor e dos labels efetivamente expostos. A consulta `up` indica disponibilidade dos alvos de scraping, não comprova a correção semântica das métricas. As consultas `node_*` permanecem sem validação como métricas do host, conforme a ressalva acima. Validar os resultados no Prometheus após alterações de versão ou configuração.
+> As expressões acima são as consultas registradas no dossiê histórico da campanha. As séries `container_*` dependem da configuração de coleta do cAdvisor e dos labels efetivamente expostos. A consulta `up` indica disponibilidade dos alvos de scraping, não comprova a correção semântica das métricas. A validação comparativa de `/proc` sustenta a interpretação de memória, swap, CPU agregada e load average global no snapshot observado; não valida `node_filesystem_*`, métricas de rede ou todas as séries `node_*`. Validar os resultados no Prometheus após alterações de versão ou configuração.
 
 ## Configuração e execução
 
