@@ -1,0 +1,302 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Dashboard da PoC Selenium Grid. Consultas limitadas às métricas atualmente coletadas pelo Prometheus.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "id": 1,
+      "title": "CPU do host (%)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "cg3adtrifq7lse"
+      },
+      "description": "Média de utilização entre os CPUs lógicos do host.",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "options": {},
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cg3adtrifq7lse"
+          },
+          "editorMode": "code",
+          "expr": "(1 - avg(rate(node_cpu_seconds_total{mode=\"idle\"}[2m]))) * 100",
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "I/O wait do host (%)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "cg3adtrifq7lse"
+      },
+      "description": "Percentual médio de tempo de CPU em espera por I/O.",
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "options": {},
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cg3adtrifq7lse"
+          },
+          "editorMode": "code",
+          "expr": "avg(rate(node_cpu_seconds_total{mode=\"iowait\"}[2m])) * 100",
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "CPU dos nós Chrome (cores)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "cg3adtrifq7lse"
+      },
+      "description": "Consumo por nó; não normalizado por quota de CPU.",
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "cores"
+        },
+        "overrides": []
+      },
+      "options": {},
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cg3adtrifq7lse"
+          },
+          "editorMode": "code",
+          "expr": "sum by (container_label_com_docker_compose_service) (rate(container_cpu_usage_seconds_total{container_label_com_docker_compose_project=\"selenium-grid\",container_label_com_docker_compose_service=~\"chrome-node-[12]\"}[2m]))",
+          "legendFormat": "{{container_label_com_docker_compose_service}}",
+          "range": true,
+          "refId": "A",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Memória working set dos nós Chrome (MiB)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "cg3adtrifq7lse"
+      },
+      "description": "Memória do cgroup em working set.",
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "mebibytes"
+        },
+        "overrides": []
+      },
+      "options": {},
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cg3adtrifq7lse"
+          },
+          "editorMode": "code",
+          "expr": "container_memory_working_set_bytes{container_label_com_docker_compose_project=\"selenium-grid\",container_label_com_docker_compose_service=~\"chrome-node-[12]\"} / 1024 / 1024",
+          "legendFormat": "{{container_label_com_docker_compose_service}}",
+          "range": true,
+          "refId": "A",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Memória disponível no host (MiB)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "cg3adtrifq7lse"
+      },
+      "description": "Indicador de pressão de memória no host.",
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "mebibytes"
+        },
+        "overrides": []
+      },
+      "options": {},
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cg3adtrifq7lse"
+          },
+          "editorMode": "code",
+          "expr": "node_memory_MemAvailable_bytes / 1024 / 1024",
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "CPU por modo — host",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "cg3adtrifq7lse"
+      },
+      "description": "Taxa por modo de CPU; séries representam média por CPU lógico.",
+      "gridPos": {
+        "x": 12,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "options": {},
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cg3adtrifq7lse"
+          },
+          "editorMode": "code",
+          "expr": "avg by (mode) (rate(node_cpu_seconds_total[2m])) * 100",
+          "legendFormat": "{{mode}}",
+          "range": true,
+          "refId": "A",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Cuidados de análise",
+      "type": "text",
+      "gridPos": {
+        "x": 0,
+        "y": 24,
+        "w": 24,
+        "h": 5
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "### Como interpretar\n- CPU de container em cores: `1.0` representa um núcleo totalmente ocupado.\n- O host possui 2 vCPUs; a escala de consumo agregado pode chegar a aproximadamente 2 cores.\n- O working set não deve ser rotulado como RSS.\n- Não inferir OOM, saturação de sessões ou capacidade máxima sem métricas e ensaios específicos."
+      },
+      "transparent": false
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": [
+    "poc",
+    "investigacao",
+    "recursos"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Investigação de Recursos - Selenium Grid & Host",
+  "uid": "poc-taurus-investigacao",
+  "version": 1,
+  "weekStart": ""
+}

@@ -1,0 +1,286 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Dashboard da PoC Selenium Grid. Consultas limitadas às métricas atualmente coletadas pelo Prometheus.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "id": 1,
+      "title": "Scrape targets — Prometheus",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "cg3adtrifq7lse"
+      },
+      "description": "1 = endpoint de coleta acessível; 0 = falha de scrape. Não representa prontidão funcional do Selenium Grid.",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 5
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {},
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cg3adtrifq7lse"
+          },
+          "editorMode": "code",
+          "expr": "up{job=\"prometheus\"}",
+          "legendFormat": "__auto",
+          "range": false,
+          "refId": "A",
+          "instant": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cg3adtrifq7lse"
+          },
+          "editorMode": "code",
+          "expr": "up{job=\"node-exporter\"}",
+          "legendFormat": "__auto",
+          "range": false,
+          "refId": "B",
+          "instant": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cg3adtrifq7lse"
+          },
+          "editorMode": "code",
+          "expr": "up{job=\"cadvisor\"}",
+          "legendFormat": "__auto",
+          "range": false,
+          "refId": "C",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "CPU do host (%)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "cg3adtrifq7lse"
+      },
+      "description": "Utilização média normalizada entre os CPUs lógicos do host.",
+      "gridPos": {
+        "x": 0,
+        "y": 5,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "options": {},
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cg3adtrifq7lse"
+          },
+          "editorMode": "code",
+          "expr": "(1 - avg(rate(node_cpu_seconds_total{mode=\"idle\"}[2m]))) * 100",
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Memória disponível no host (MiB)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "cg3adtrifq7lse"
+      },
+      "description": "Memória disponível reportada pelo node-exporter.",
+      "gridPos": {
+        "x": 12,
+        "y": 5,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "mebibytes"
+        },
+        "overrides": []
+      },
+      "options": {},
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cg3adtrifq7lse"
+          },
+          "editorMode": "code",
+          "expr": "node_memory_MemAvailable_bytes / 1024 / 1024",
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "CPU dos containers por serviço (cores)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "cg3adtrifq7lse"
+      },
+      "description": "Consumo em cores de CPU; 1.0 equivale a um núcleo lógico totalmente ocupado.",
+      "gridPos": {
+        "x": 0,
+        "y": 13,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "cores"
+        },
+        "overrides": []
+      },
+      "options": {},
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cg3adtrifq7lse"
+          },
+          "editorMode": "code",
+          "expr": "sum by (container_label_com_docker_compose_service) (rate(container_cpu_usage_seconds_total{container_label_com_docker_compose_project=\"selenium-grid\"}[2m]))",
+          "legendFormat": "{{container_label_com_docker_compose_service}}",
+          "range": true,
+          "refId": "A",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Memória working set dos nós Chrome (MiB)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "cg3adtrifq7lse"
+      },
+      "description": "Working set do cgroup, não equivale necessariamente a RSS do processo Chrome.",
+      "gridPos": {
+        "x": 12,
+        "y": 13,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "mebibytes"
+        },
+        "overrides": []
+      },
+      "options": {},
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cg3adtrifq7lse"
+          },
+          "editorMode": "code",
+          "expr": "container_memory_working_set_bytes{container_label_com_docker_compose_project=\"selenium-grid\",container_label_com_docker_compose_service=~\"chrome-node-[12]\"} / 1024 / 1024",
+          "legendFormat": "{{container_label_com_docker_compose_service}}",
+          "range": true,
+          "refId": "A",
+          "instant": false
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Limites de interpretação",
+      "type": "text",
+      "gridPos": {
+        "x": 0,
+        "y": 21,
+        "w": 24,
+        "h": 5
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "### Escopo observado\n- `up` confirma apenas que o endpoint foi coletado com sucesso.\n- Não há métricas de sessões ativas do Selenium Hub neste Prometheus.\n- Não há métricas Taurus integradas neste dashboard.\n- A memória exibida é *container working set*."
+      },
+      "transparent": false
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": [
+    "poc",
+    "operacional",
+    "selenium-grid"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "PoC - Selenium Grid & Infraestrutura",
+  "uid": "poc-selenium-operacional",
+  "version": 1,
+  "weekStart": ""
+}

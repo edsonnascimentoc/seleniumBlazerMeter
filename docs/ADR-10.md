@@ -33,9 +33,11 @@ loadtester, evitando atribuir uma degradação ao Grid sem evidência causal.
 
 ## ESTUDO
 
-Fonte primária da validação:
+Registro documental disponível da validação:
 
-`docs/baseline/2026-09-22.md`
+`docs/STATUS-2026-09-22.md`
+
+**Nota de rastreabilidade:** o arquivo originalmente referenciado como `docs/baseline/2026-09-22.md` não foi localizado na branch principal nem no histórico Git consultado. A versão de `docs/STATUS-2026-09-22.md` registrada no commit `864d0ca` já contém o contexto da arquitetura Taurus e as limitações da campanha descritas nesta ADR. Esse documento deve ser tratado como registro documental consolidado, e não como substituto integral de logs brutos ou evidências primárias eventualmente ausentes.
 
 A baseline registra:
 

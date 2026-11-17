@@ -60,25 +60,31 @@ O Compose configura `shm_size: 512mb` em cada Chrome Node. O script Selenium tam
 | Métrica | Resultado |
 |---|---:|
 | Amostras (samples) | **63** |
-| Taxa de sucesso | **100,00%** |
-| Falhas | **0,00%** |
+| Sucessos | **63** |
+| Falhas | **0** |
+| Taxa de falha | **0,00%** |
 | Tempo médio | **6,239 s** |
-| Tempo mínimo | **3,110 s** |
-| P50 / mediana | **5,840 s** |
-| P90 | **8,120 s** |
-| P95 | **9,450 s** |
-| P99 | **11,210 s** |
-| Tempo máximo | **12,430 s** |
+| Tempo mínimo | **3,303 s** |
+| P50 / mediana | **5,204 s** |
+| P90 | **9,048 s** |
+| P95 | **11,824 s** |
+| P99 | **22,432 s** |
+| Tempo máximo | **22,445 s** |
 | Exit code | **0 — Done performing** |
 
 Os percentis são estatísticas reportadas pelo Taurus para o label `test_access_esxi`. Eles representam os tempos das amostras funcionais reportadas pela campanha; não devem ser confundidos com percentis de latência HTTP de um teste de protocolo, nem com métricas calculadas pelo Prometheus.
 
-### Leitura operacional
+### Rastreabilidade e interpretação dos resultados
 
-- O P50 de 5,840 s representa a mediana das amostras.
-- O P90 de 8,120 s e o P95 de 9,450 s descrevem a cauda superior observada na campanha.
-- O P99 de 11,210 s e o máximo de 12,430 s registram os tempos mais altos observados.
-- O resultado comprova a execução bem-sucedida desta campanha com dois usuários virtuais. **Não comprova capacidade homologada para concorrência superior, nem capacidade máxima do Grid ou do host.**
+Os indicadores acima foram conferidos com o arquivo de amostras da execução:
+
+`/home/edsonc/2026-11-04_11-32-06.912938/apiritif.0.csv`
+
+A validação encontrou 63 amostras bem-sucedidas e nenhuma falha. Os percentis foram reproduzidos utilizando o algoritmo `SinglePassIterator` do Taurus 1.17.1 e HdrHistogram, com os seguintes resultados: P50 5,204 s, P90 9,048 s, P95 11,824 s e P99 22,432 s.
+
+**Nota de correção documental:** os percentis anteriormente registrados (P50 5,840 s, P90 8,120 s, P95 9,450 s e P99 11,210 s), assim como os tempos mínimo e máximo anteriormente publicados, não foram reproduzidos a partir do CSV identificado. Sua origem permanece sem confirmação. Eles não devem ser atribuídos a esta execução sem a localização da respectiva evidência primária.
+
+O resultado comprova a execução bem-sucedida desta campanha com dois usuários virtuais. **Não comprova capacidade homologada para concorrência superior, nem capacidade máxima do Grid ou do host.**
 
 ## Auditoria pós-carga — 04/11/2026
 
@@ -263,3 +269,19 @@ PYTHONPATH="/home/edsonc/.bzt/python-packages/3.13.5" \\
 python3 -m pytest -m pae_manual_auth -s -v \\
   tests/functional/test_acesso_pae.py
 ```
+
+## Dashboards Grafana — Fase 03
+
+Foram criados e importados três dashboards novos e independentes para a PoC, preservando os três dashboards originais existentes no Grafana:
+
+- **PoC - Selenium Grid & Infraestrutura — Fase 03** (`poc-selenium-operacional`): visão operacional de endpoints de scrape, CPU e memória do host e dos containers — 6 painéis.
+- **Investigação de Recursos - Selenium Grid & Host** (`poc-taurus-investigacao`): investigação de CPU, I/O wait e memória — 7 painéis.
+- **QAOps - Resultados e Capacidade** (`qaops-capacidade-correlacao`): contexto de infraestrutura para QAOps; permanece parcial até a integração dos resultados Taurus — 6 painéis.
+
+Os três dashboards utilizam o datasource Prometheus existente (`cg3adtrifq7lse`). A inspeção visual após a importação confirmou dados nos 19 painéis, sem erros visíveis de renderização ou datasource. A inspeção dos JSONs exportados identificou 20 targets/expressões PromQL.
+
+O indicador `up` representa o sucesso da coleta do endpoint, não a prontidão funcional do Selenium Grid. A memória dos containers é apresentada como working set do cgroup, não RSS. O Prometheus ainda não coleta métricas do Selenium Hub ou Taurus; portanto, sessões ativas, VUs, throughput, latência, percentis e taxa de erro não estão disponíveis como métricas em tempo real.
+
+As exportações pós-importação de 17/11/2026 e seus checksums SHA-256 estão registrados em `dashboards/exports/grafana-2026-11-17/`. Os detalhes de consultas, validação, arquivos e limitações estão em [`dashboards/generated/FASE_03_DASHBOARDS.md`](dashboards/generated/FASE_03_DASHBOARDS.md).
+
+**Estado:** criação, importação, inspeção visual e exportação concluídas. A integração das métricas Taurus e do Selenium Hub, a correlação temporal automatizada e a homologação de capacidade permanecem pendentes. A conclusão da Fase 03 não representa homologação de capacidade máxima do ambiente.

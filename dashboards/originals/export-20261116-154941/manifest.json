@@ -1,0 +1,21 @@
+{
+  "exported_at": "2026-11-16T16:01:19-03:00",
+  "grafana_url": "http://127.0.0.1:3000",
+  "dashboards": [
+    {
+      "uid": "poc-selenium-infra",
+      "title": "PoC - Selenium Grid & Infraestrutura",
+      "version": 1
+    },
+    {
+      "uid": "investigacao-esxi-latencia",
+      "title": "Investigação de Latência - PoC Taurus & Selenium Grid",
+      "version": 1
+    },
+    {
+      "uid": "qaops-selenium-perf",
+      "title": "dashboard-qaops-esxi-correlation.json",
+      "version": 1
+    }
+  ]
+}
