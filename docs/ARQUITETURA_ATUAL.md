@@ -101,7 +101,7 @@ integralmente essa configuração.
 | Selenium Hub | Recebe sessões WebDriver e distribui a execução |
 | Chrome Node 1 e 2 | Executam sessões de navegador |
 | Prometheus | Coleta e armazena séries temporais |
-| Node Exporter | Expõe métricas `node_*` a partir de seu próprio contexto de execução |
+| Node Exporter | Expõe métricas `node_*`; algumas fontes `/proc` refletem dados globais do kernel, enquanto filesystem e rede dependem do namespace do container |
 | cAdvisor | Expõe métricas dos containers |
 | Grafana | Apresenta dashboards e consultas de monitoramento |
 
@@ -136,18 +136,43 @@ métricas ou sua atribuição ao host físico/virtual.
 
 ### 4.3 Limitações de interpretação das métricas
 
-O Node Exporter observado executa em container, sem compartilhamento
-configurado do namespace PID do host e sem os mounts necessários para
-caracterizar suas séries como métricas comprovadas do sistema operacional
-Debian da VM.
+O Node Exporter observado executa em container com namespace PID
+privado, namespace cgroup privado (`CgroupnsMode=private`) e sem mounts
+explícitos dos diretórios do host. O container possui `/proc` próprio,
+`/sys` somente leitura e uma montagem cgroup v2 somente leitura. Portanto,
+a origem e o escopo das métricas devem ser avaliados por coletor, e não
+classificados em bloco como métricas do host ou do container.
 
-A série `node_uname_info` apresentou o hostname do próprio container.
-Portanto, métricas `node_*`, incluindo carga e memória, não devem ser
-apresentadas como métricas validadas do host neste cenário.
+A comparação direta entre o host e o container produziu as seguintes
+evidências no snapshot inspecionado:
 
-O cAdvisor expõe métricas dos containers. A série
+| Fonte/indicador | Evidência observada | Interpretação permitida |
+|---|---|---|
+| `/proc/meminfo` — `MemTotal` e `SwapTotal` | Valores idênticos entre host e container; `MemFree`, `MemAvailable` e `SwapFree` muito próximos em leituras sequenciais | As fontes de memória física total e swap total, assim como os valores dinâmicos observados, correspondem aos dados globais da VM nesse snapshot |
+| `/proc/stat` — linha agregada `cpu` | Contadores praticamente iguais, com pequenas diferenças entre leituras sequenciais | Evidência consistente com contadores agregados de CPU do kernel compartilhado; a comparação não valida isoladamente cada série exposta pelo Prometheus |
+| `/proc/loadavg` | Os três campos de load average (`1.62`, `2.56`, `2.32`) coincidiram | Os valores de load average observados correspondem ao host; os campos finais de tarefas e último PID diferiram entre os contextos |
+| `df -hT` | O container mostrou raiz `overlay`, `tmpfs` e mounts internos; o host mostrou `/dev/sda1` montado em `/` | A visão de filesystem do Node Exporter é a do container; `node_filesystem_*` não está validado como inventário do filesystem do host |
+| `node_uname_info` | O hostname exposto anteriormente correspondeu ao container | Não utilizar esse hostname como identificação da VM hospedeira |
+| Rede | Não foi feita comparação equivalente entre interfaces do host e do container | Métricas `node_network_*` permanecem sem validação como métricas de rede do host |
+
+As pequenas diferenças de memória e CPU são compatíveis com leituras
+realizadas em sequência e com a natureza dinâmica dos contadores. Os
+resultados permitem validar a correspondência das fontes globais
+inspecionadas naquele momento, mas não autorizam generalizar a conclusão
+para todos os coletores ou todas as séries `node_*`.
+
+O limite de recursos observado para o Node Exporter foi `Memory=67108864`
+(64 MiB) e `MemorySwap=134217728` (128 MiB como limite combinado de memória
+e swap, conforme a configuração Docker inspecionada). O consumo pontual
+registrado por `docker stats` foi 18,07 MiB (28,23% do limite de memória).
+Esse limite é uma característica do container; não invalida por si só as
+leituras globais de `/proc/meminfo`, mas deve ser acompanhado para evitar
+que o próprio exporter seja encerrado por pressão de memória.
+
+O cAdvisor expõe métricas dos containers e cgroups observados. A série
 `container_memory_working_set_bytes` representa o working set de memória
-do container; não equivale à memória RSS exclusiva do processo Chrome.
+do cgroup/container; não equivale à memória RSS exclusiva do processo
+Chrome nem deve ser comparada diretamente ao campo `used` de `free`.
 
 A consulta de CPU baseada em
 `container_cpu_usage_seconds_total` expressa percentual de um núcleo.
@@ -227,13 +252,15 @@ Em particular, permanecem sem coleta específica comprovada:
 - métricas do VMware ESXi;
 - métricas da aplicação PAE;
 - métricas da VM que hospeda a aplicação;
-- métricas de sistema operacional do host Debian devidamente
-  atribuídas e validadas.
+- métricas de filesystem e rede do host Debian pelo Node Exporter;
+- validação individual das demais séries e coletores `node_*` no Prometheus.
 
-As séries do cAdvisor devem continuar sendo interpretadas no
-contexto dos containers. As séries `node_*` do Node Exporter
-não devem ser tratadas como métricas validadas do host enquanto
-a configuração de coleta não for corrigida e verificada.
+As fontes globais de memória, swap, CPU agregada e load average foram
+comparadas diretamente com o host e apresentaram correspondência no
+snapshot documentado na seção 4.3. Essa evidência não valida o filesystem,
+a rede, o hostname ou todas as demais métricas do Node Exporter. As séries
+do cAdvisor devem continuar sendo interpretadas no contexto dos cgroups
+e containers observados.
 
 ### 5.4 Pendências para evolução
 
@@ -242,14 +269,16 @@ reprodutibilidade, são necessárias as seguintes atividades:
 
 1. Reconciliar a configuração Compose versionada com a configuração
    efetivamente utilizada no runtime.
-2. Validar a coleta de métricas do host Debian, com acesso explícito
-   aos recursos do host e comprovação da origem das séries.
-3. Avaliar a inclusão de métricas específicas do Selenium Grid,
-   do ESXi e da aplicação sob teste, conforme os objetivos de cada
-   campanha.
-4. Preservar, para cada campanha, os arquivos de configuração,
+2. Validar individualmente as séries de filesystem e rede do host Debian;
+   caso sejam necessárias, avaliar configuração explícita do Node Exporter
+   para observar os mounts, a raiz de filesystem e as interfaces do host.
+3. Conferir no Prometheus as séries efetivamente expostas por cada coletor,
+   correlacionando-as com as fontes do host e do container.
+4. Avaliar a inclusão de métricas específicas do Selenium Grid, do ESXi e
+   da aplicação sob teste, conforme os objetivos de cada campanha.
+5. Preservar, para cada campanha, os arquivos de configuração,
    relatórios integrais, logs e evidências de estado da infraestrutura.
-5. Executar campanhas específicas para cada sistema sob teste,
+6. Executar campanhas específicas para cada sistema sob teste,
    sem extrapolar resultados obtidos em um ambiente para outro.
 
 Essas atividades são pendências de evolução e não representam
