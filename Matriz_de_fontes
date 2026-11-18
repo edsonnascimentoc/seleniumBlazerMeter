@@ -19,3 +19,24 @@
 
 ## Grafana MCP
 /grafana/mcp-grafana
+
+## Finalidade das referências
+
+| Tecnologia | Identificador Context7 | Finalidade no projeto |
+|---|---|---|
+| Selenium | `/seleniumhq/selenium` | WebDriver, automação de navegador e testes funcionais |
+| Docker Selenium | `/seleniumhq/docker-selenium` | Selenium Grid, Hub, nós de navegador e configuração dos contêineres |
+| Docker | `/docker/docs` | Conceitos, imagens, contêineres, volumes e redes |
+| Docker Compose | `/docker/compose` | Orquestração e configuração dos serviços da PoC |
+| Docker CLI | `/docker/cli` | Inspeção, execução e diagnóstico dos contêineres |
+| Taurus | `/blazemeter/taurus` | Configuração e execução das campanhas históricas de carga |
+| Grafana | `/grafana/grafana` | Dashboards, painéis, fontes de dados e consultas |
+| Grafana MCP | `/grafana/mcp-grafana` | Integração programática e operações suportadas pelo servidor MCP |
+
+## Critérios de utilização
+
+- Consultar a documentação correspondente à tecnologia antes de alterar configurações ou código.
+- Conferir compatibilidade entre a documentação consultada e as versões efetivamente instaladas no ambiente.
+- Priorizar documentação oficial e exemplos compatíveis com a versão utilizada.
+- Não considerar uma funcionalidade homologada apenas porque está documentada; registrar evidências de execução e validação.
+- Distinguir a trilha de testes funcionais do PAE da campanha histórica de carga Taurus/ESXi.

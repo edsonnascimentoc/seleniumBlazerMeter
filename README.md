@@ -239,6 +239,7 @@ Evidências históricas locais:
 - [Docker Compose Specification](https://compose-spec.io/)
 - [Selenium Grid](https://www.selenium.dev/documentation/grid/)
 - [Matriz_de_fontes](./Matriz_de_fontes)
+- A matriz reúne referências Context7 e critérios para consulta, compatibilidade de versões e validação técnica.
 
 ---
 
