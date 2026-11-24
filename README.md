@@ -2,6 +2,10 @@
 
 Repositório de prova de conceito (PoC) com duas trilhas independentes: **testes funcionais do PAE Ambulante com Selenium** e **campanha histórica de carga funcional da aplicação VMware ESXi com Taurus, Selenium Grid e Chrome**. A infraestrutura utiliza Docker e inclui coleta de métricas por Prometheus, cAdvisor e Node Exporter, com visualização no Grafana. Os resultados e limites de cada trilha são documentados separadamente.
 
+## Baseline operacional e divergências
+
+A fotografia do runtime observada em 24/11/2026, incluindo a matriz de divergências em relação aos arquivos versionados e os critérios de evidência da próxima campanha, está em [docs/BASELINE_OPERACIONAL_2026-11-24.md](docs/BASELINE_OPERACIONAL_2026-11-24.md). Essa baseline é experimental e não representa homologação de capacidade para produção.
+
 ## Arquitetura
 
 A arquitetura funcional atual e suas limitações estão descritas em [docs/ARQUITETURA_ATUAL.md](docs/ARQUITETURA_ATUAL.md). O diagrama abaixo representa especificamente a campanha histórica Taurus/ESXi de 04/11/2026; ele não representa o fluxo funcional do PAE.
