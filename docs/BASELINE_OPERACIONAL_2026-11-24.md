@@ -126,6 +126,34 @@ PSI representa tempo de contenção/pressão, não percentual de utilização di
 
 O destino ESXi `https://10.1.100.102/ui/` respondeu HTTP 200 em aproximadamente 0,144 segundo no teste de conectividade do snapshot. Esse tempo é uma verificação pontual, não uma medição de desempenho representativa.
 
+
+### 4.2 Coleta complementar E1.2 — pressão e processos do host
+
+Uma coleta complementar posterior à fotografia das 08:48:55 identificou maior pressão de recursos. O horário exato dessa coleta não foi informado; os valores abaixo não devem ser fundidos com o snapshot anterior como se fossem simultâneos.
+
+**Processos com maior RSS observados:**
+- Firefox content process PID 4435: 1.210.264 KiB (~1.153 MiB; 30,1%).
+- Firefox parent PID 4087: 349.176 KiB (~341 MiB; 8,6%).
+- GNOME Text Editor PID 24299: 316.816 KiB (~309 MiB).
+- GNOME Shell PID 3433: 223.776 KiB (~218 MiB).
+- Selenium Hub Java PID 2615: 141.936 KiB (~139 MiB).
+- Chrome Node Java: aproximadamente 108 MiB e 106 MiB.
+- Grafana: aproximadamente 80 MiB; Prometheus: aproximadamente 60 MiB.
+
+Os processos Firefox listados somavam aproximadamente 1,9 GiB de RSS, mas RSS pode contabilizar páginas compartilhadas mais de uma vez. A conclusão segura é que Firefox e desktop eram consumidores relevantes de memória nessa coleta, não que o RSS agregado represente memória física exclusiva.
+
+**Amostragem de CPU, memória e I/O:**
+- `vmstat 1 15`: CPU idle variou de 46% a 99%; user chegou a aproximadamente 39–48%; iowait 0–2%; steal 0. Não houve evidência de saturação contínua de CPU na amostra.
+- Swap: aproximadamente 1,25 GiB usados; `si/so` apareceram apenas na primeira amostra e permaneceram zerados nas seguintes. Swap ocupada não significa, isoladamente, thrashing ativo.
+- PSI CPU: `some avg10=7.25 avg60=14.79 avg300=7.41`; `full=0`.
+- PSI memória: `some avg10=0.71 avg60=0.83 avg300=0.27`; `full avg10=0.57 avg60=0.44 avg300=0.12`.
+- PSI I/O: `some avg10=1.64 avg60=2.82 avg300=1.62`; `full avg10=1.06 avg60=1.43 avg300=1.01`.
+- `iostat`: utilização observada do dispositivo sda baixa nas amostras (aproximadamente 1,27% a 4%); iowait 0–0,61%; fila média baixa. Não houve evidência de saturação persistente do dispositivo durante essa janela.
+
+**Interpretação E1.2:** há margem de RAM limitada e pressão de memória/I/O mensurável pelo PSI; Firefox e aplicações de desktop competem por memória com a PoC. Não há evidência de CPU continuamente saturada nem de saturação persistente do dispositivo nas janelas amostradas. A origem da pressão PSI de I/O não foi determinada e a amostra não permite concluir sobre a saúde do armazenamento ESXi.
+
+Esses dados são diagnóstico histórico, não baseline pré-campanha atual. Uma nova coleta sincronizada continua obrigatória imediatamente antes de qualquer execução Taurus.
+
 ## 5. Matriz de divergências: runtime versus branch main
 
 Os valores de repositório abaixo foram conferidos nos arquivos da branch `main` durante a preparação desta revisão. Os hashes identificam os blobs lidos:
