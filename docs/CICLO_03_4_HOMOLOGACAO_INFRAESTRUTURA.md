@@ -78,6 +78,32 @@ A coleta externa deve complementar as séries Prometheus, sobretudo onde a confi
 
 **Critério E3:** evidência de targets saudáveis, dashboard pronto, consultas validadas e coleta externa testada sem iniciar Taurus.
 
+
+### 2.4 Etapa A — auditoria estática inicial dos artefatos (24/11/2026)
+
+Arquivos lidos diretamente da branch `main`; nenhum script foi executado.
+
+| Artefato | SHA do blob | Resultado da inspeção |
+|---|---|---|
+| `run_pipeline.sh` | `8244deedbea9475a543e765d54cd72b6662deb47` | Fluxo e comandos identificados; possui auditoria pré/pós e executa `bzt` |
+| `taurus-esxi-poc.yml` | `5e78d3dbe8e9c2ad63353b21117fc667ddf583eb` | Selenium/pytest, concorrência 2, ramp-up 20s, hold-for 3m, console e final-stats/percentis |
+| `test_esxi.py` | `6a75c911b8ae4b0ead5d5ff5c24256e1f18e48bf` | Remote WebDriver no Hub local; acessa `https://10.1.100.102/ui/`; page-load timeout 45s, espera explícita 15s, pausa fixa 1s e assert de presença de “VMware” |
+| `check_poc_environment.sh` | `6eb5637d3ac71c585e5c4ffb51ba26b42fb2da4b` | Verifica host/Docker/Grid/Nodes/zombies/exporters/targets e conectividade ESXi; não coleta filesystem/inodes nem tráfego/rede quantitativa |
+| `pytest.ini` | `3755cd7fd02b0f85ef5fb5d209722d271d5d24f3` | Declara marker `pae_manual_auth`; o teste atual não o utiliza |
+
+**Comportamento crítico do pipeline:** `run_pipeline.sh` usa `set -Eeuo pipefail` e chama `check_poc_environment.sh` antes de criar o diretório de artefatos e antes de definir `POST_AUDIT_REQUIRED=1`. Como a auditoria atual detecta um zombie em cada Chrome Node e retorna código 1, o Bash encerra o pipeline nessa chamada; portanto, no estado observado, a execução não chega ao comando `bzt`. O bloqueio é intencional e protege a campanha. Não contornar nem enfraquecer esse gate para iniciar Taurus.
+
+Outras observações:
+- O diretório `artifacts/` é criado dinamicamente pelo pipeline; não foi encontrado como diretório versionado na raiz consultada.
+- O diretório `evidence/` não existe na árvore atual da branch `main`. Havia referência anterior a `evidence/` como conteúdo não rastreado no checkout local; seu conteúdo local não foi lido nesta auditoria remota e não deve ser presumido.
+- A árvore da branch contém `dashboards/` com subdiretórios `exports/`, `generated/` e `originals/`; a existência do dashboard exato solicitado e seu estado atual ainda precisam ser verificados dentro desses diretórios/Grafana.
+- O pipeline valida que exista exatamente um arquivo `*.ldjson`, que as amostras estejam `PASSED` e que não restem sessões no Grid. A auditoria pós-carga roda pelo trap de saída somente depois que `POST_AUDIT_REQUIRED` passa a 1.
+- O pipeline não implementa monitoramento contínuo de CPU/RAM/PSI/filesystem/rede, limiares automáticos de interrupção ou captura externa sincronizada. A supervisão humana e a coleta complementar continuam obrigatórias.
+- O teste utiliza `--ignore-certificate-errors` e `accept_insecure_certs=True`; isso é aceitável apenas como decisão explícita de laboratório. Não deve ser transportado para produção sem avaliação de TLS e confiança de certificados.
+- A verificação de conteúdo `"VMware"` é um assert funcional simples; não mede por si só latência de usuário, disponibilidade de API, throughput ou capacidade de produção.
+
+**Resultado da Etapa A:** leitura estática dos três artefatos principais e do script de auditoria concluída. A etapa A permanece **parcial**, pois falta conferir os diretórios de evidências locais, inventariar integralmente os exports do dashboard e validar permissões/dependências no host real. A campanha Taurus permanece bloqueada pelo gate de auditoria e sem autorização específica.
+
 ## 3. D — Campanha controlada (bloqueada)
 
 A campanha só poderá começar após:
