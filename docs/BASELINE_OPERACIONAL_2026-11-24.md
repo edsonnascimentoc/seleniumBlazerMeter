@@ -2,7 +2,7 @@
 
 ## 1. Finalidade e regra de governança
 
-Este documento registra o estado operacional observado no host `loadtester-lab` em 24/11/2026 e o compara com a configuração versionada na branch `main) do repositório.
+Este documento registra o estado operacional observado no host `loadtester-lab` em 24/11/2026 e o compara com a configuração versionada na branch `main` do repositório.
 
 **Regra principal da PoC:** tornar a arquitetura operacional e reproduzível em escala maior, com vistas à operação em produção. A VM atual é um ambiente experimental de referência; seus limites não devem ser tratados como dimensionamento de produção.
 
