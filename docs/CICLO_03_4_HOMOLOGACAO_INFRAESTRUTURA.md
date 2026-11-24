@@ -96,13 +96,13 @@ Arquivos lidos diretamente da branch `main`; nenhum script foi executado.
 Outras observações:
 - O diretório `artifacts/` é criado dinamicamente pelo pipeline; não foi encontrado como diretório versionado na raiz consultada.
 - O diretório `evidence/` não existe na árvore atual da branch `main`. Havia referência anterior a `evidence/` como conteúdo não rastreado no checkout local; seu conteúdo local não foi lido nesta auditoria remota e não deve ser presumido.
-- A árvore da branch contém `dashboards/` com subdiretórios `exports/`, `generated/` e `originals/`; a existência do dashboard exato solicitado e seu estado atual ainda precisam ser verificados dentro desses diretórios/Grafana.
+- A árvore da branch contém o dashboard **PoC - Selenium Grid & Infraestrutura — Fase 03** documentado em `dashboards/generated/FASE_03_DASHBOARDS.md`, JSON de origem `dashboards/generated/poc-selenium-operacional.json` e exportação de 17/11/2026 em `dashboards/exports/grafana-2026-11-17/`. O diretório de exportação contém os três JSONs e `SHA256SUMS`; a documentação da Fase 03 registra importação e validação visual dos 19 painéis. Isso comprova evidência versionada histórica, não o estado atual da instância Grafana.
 - O pipeline valida que exista exatamente um arquivo `*.ldjson`, que as amostras estejam `PASSED` e que não restem sessões no Grid. A auditoria pós-carga roda pelo trap de saída somente depois que `POST_AUDIT_REQUIRED` passa a 1.
 - O pipeline não implementa monitoramento contínuo de CPU/RAM/PSI/filesystem/rede, limiares automáticos de interrupção ou captura externa sincronizada. A supervisão humana e a coleta complementar continuam obrigatórias.
 - O teste utiliza `--ignore-certificate-errors` e `accept_insecure_certs=True`; isso é aceitável apenas como decisão explícita de laboratório. Não deve ser transportado para produção sem avaliação de TLS e confiança de certificados.
 - A verificação de conteúdo `"VMware"` é um assert funcional simples; não mede por si só latência de usuário, disponibilidade de API, throughput ou capacidade de produção.
 
-**Resultado da Etapa A:** leitura estática dos três artefatos principais e do script de auditoria concluída. A etapa A permanece **parcial**, pois falta conferir os diretórios de evidências locais, inventariar integralmente os exports do dashboard e validar permissões/dependências no host real. A campanha Taurus permanece bloqueada pelo gate de auditoria e sem autorização específica.
+**Resultado da Etapa A:** leitura estática dos três artefatos principais e do script de auditoria concluída; o inventário remoto também confirmou os artefatos versionados de dashboards e exportações. A etapa A permanece **parcial**, pois faltam a inspeção do checkout local e de seu diretório não rastreado `evidence/`, validação de permissões/dependências no host real e confirmação do estado atual da instância Grafana. O diretório `artifacts/` não existe na árvore remota e será criado pelo pipeline apenas durante execução. A campanha Taurus permanece bloqueada pelo gate de auditoria e sem autorização específica.
 
 ## 3. D — Campanha controlada (bloqueada)
 
