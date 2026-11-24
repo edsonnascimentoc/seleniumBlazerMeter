@@ -80,8 +80,47 @@ A campanha não deve ser iniciada enquanto a auditoria pré-execução atual nã
 
 ---
 
+
+### 7. Campanha de investigação adicional — Fluxbox / shell zombie (24/11/2026)
+
+Esta campanha documental complementa a investigação inicial. Não houve instalação de pacotes, alteração de arquivos, reinício de containers, encerramento de processos ou execução de Taurus.
+
+#### 7.1 Evidências novas confirmadas
+
+| Item | Resultado observado | Interpretação permitida |
+|---|---|---|
+| Processo pai | PID 105: `/usr/bin/fluxbox -display :99.0` nos dois Nodes | Fluxbox é o pai atual do zombie |
+| Processo filho | PID 154: `[sh] <defunct>`, PPID 105, estado `Zs` nos dois Nodes | O shell terminou e ainda não foi recolhido |
+| Horário de início | Fluxbox às 11:40:37; zombie às 11:40:44 em ambos | A ocorrência aparece cerca de sete segundos após o início do Fluxbox |
+| Inicialização observada | `start-xvfb.sh` executa diretamente `/usr/bin/fluxbox` via `xvfb-run` | Não há evidência de passagem pelo wrapper `startfluxbox` nesse fluxo |
+| Script `startfluxbox` | Usa `~/.fluxbox/startup` ou cria script padrão com `fbautostart` | Seu conteúdo não prova execução neste ambiente |
+| Configuração Fluxbox examinada | `/etc/X11/fluxbox/init`, `overlay` e `/home/seluser/.fluxbox/init` sem `rootCommand`; não foi encontrado `~/.fluxbox/startup` | Enfraquece a hipótese de comando de inicialização configurado nesses arquivos |
+| `fbsetbg` | Chama o setter escolhido (`Esetroot`) e, em caso de falha, executa `message` em background | Relação entre falha do wallpaper e notificações está caracterizada |
+| `xmessage` | Processos observados com PPID 1, iniciados antes do Fluxbox | Não são filhos diretos do PID 105 observados nesta coleta |
+| `Esetroot` | Logs registram `Unable to open display :99.0` em algumas tentativas; posteriormente x11vnc utiliza o display | Falha transitória de abertura do display está documentada; vínculo com o zombie não foi demonstrado |
+| Ferramentas | `strings` e `readelf` ausentes nos containers | Não foi possível inspecionar strings/símbolos do binário por esses utilitários |
+
+#### 7.2 Hipóteses reavaliadas
+
+- **`startfluxbox` / `~/.fluxbox/startup`: enfraquecida como origem.** O fluxo observado chama diretamente `/usr/bin/fluxbox`; o wrapper não aparece como ancestral do processo.
+- **`fbautostart`: não sustentada para esta ocorrência.** Sua chamada está no script padrão gerado pelo wrapper `startfluxbox`, cujo uso não foi observado.
+- **`fbsetbg` / `Esetroot`: hipótese não confirmada.** Há erros de wallpaper e chamadas assíncronas a `xmessage`, mas nenhum dado liga essas chamadas ao shell PID 154.
+- **`xmessage` como pai do zombie: descartada para a topologia observada.** O PPID do zombie é 105 (Fluxbox), enquanto os processos xmessage examinados têm PPID 1.
+- **Fluxbox como pai que ainda não recolheu o filho: confirmada.** A relação PPID e o estado Z foram observados nos dois Nodes. Isso não identifica qual rotina criou o shell.
+- **`rootCommand` nos arquivos examinados: não encontrada.** A busca não cobre necessariamente todos os recursos de estilo ou mecanismos internos do binário; não é uma exclusão universal.
+- **Defeito do Fluxbox, da imagem Selenium ou efeito de limitação de recursos: não demonstrado.**
+
+#### 7.3 Limitações e próximo experimento
+
+O estado zombie não preserva sua linha de comando em `/proc/<pid>/cmdline`; a observação posterior não permite reconstruir retrospectivamente o comando que o criou. Para avançar, será necessário capturar uma nova inicialização e rastrear criação/execução de processos (por exemplo, eventos de `fork`, `clone`, `vfork` e `execve`) com ferramenta disponível no host ou em ambiente de diagnóstico equivalente.
+
+A próxima coleta deve ser planejada antes de qualquer reinício. **Não reiniciar os Nodes para este diagnóstico sem autorização específica**, pois isso destrói o estado atual e pode remover evidências. Não instalar ferramentas nos containers homologados nesta etapa.
+
+**Resultado:** relação pai-filho confirmada; hipótese de uso de `startfluxbox` enfraquecida; vínculo de `fbsetbg`/Esetroot com o zombie não confirmado; causa raiz indeterminada; DT-001 permanece aberto.
+
 ## Histórico de atualização
 
 | Data | Atualização |
 |---|---|
 | 24/11/2026 | Registro inicial de DT-001 com evidências de PID/PPID, estados dos processos e relação pai-filho nos dois Chrome Nodes. |
+| 24/11/2026 | Campanha adicional: registrada a inicialização direta do Fluxbox, reavaliação do wrapper `startfluxbox`, erros de Esetroot e topologia de xmessage. Hipóteses classificadas sem atribuição indevida de causa raiz. |
