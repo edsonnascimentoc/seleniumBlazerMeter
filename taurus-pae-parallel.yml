@@ -1,0 +1,20 @@
+# Execução funcional paralela do PAE: duas sessões independentes.
+# Autenticação manual pelo operador em cada navegador via noVNC.
+# Uma única passagem; não é campanha de carga nem teste de duração.
+
+execution:
+  - executor: selenium
+    runner: pytest
+    scenario: pae_parallel_auth
+    concurrency: 2
+    iterations: 1
+
+scenarios:
+  pae_parallel_auth:
+    script: tests/functional/parallel
+
+reporting:
+  - module: console
+  - module: final-stats
+    summary: true
+    percentiles: true
