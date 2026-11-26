@@ -1,0 +1,20 @@
+# Execução Taurus isolada da sessão funcional PAE A.
+# Autenticação manual pelo operador via noVNC.
+# Uma iteração; não representa campanha de carga sustentada.
+
+execution:
+  - executor: selenium
+    runner: pytest
+    scenario: pae_a
+    concurrency: 1
+    iterations: 1
+
+scenarios:
+  pae_a:
+    script: tests/functional/parallel/test_sessao_pae_a.py
+
+reporting:
+  - module: console
+  - module: final-stats
+    summary: true
+    percentiles: true
