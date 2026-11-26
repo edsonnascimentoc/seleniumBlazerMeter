@@ -124,3 +124,37 @@ A próxima coleta deve ser planejada antes de qualquer reinício. **Não reinici
 |---|---|
 | 24/11/2026 | Registro inicial de DT-001 com evidências de PID/PPID, estados dos processos e relação pai-filho nos dois Chrome Nodes. |
 | 24/11/2026 | Campanha adicional: registrada a inicialização direta do Fluxbox, reavaliação do wrapper `startfluxbox`, erros de Esetroot e topologia de xmessage. Hipóteses classificadas sem atribuição indevida de causa raiz. |
+
+
+---
+
+## DT-002 — Integração Taurus pytest runner com pytest-xdist na execução paralela PAE
+
+**Estado:** contornado por estratégia alternativa; causa interna do plugin ainda não corrigida.
+
+### Evidência observada
+
+Na execução Taurus com runner pytest, concurrency 2 e pytest-xdist, os dois testes terminaram como aprovados no resumo do pytest, mas o plugin de gravação do Taurus lançou:
+
+    AttributeError: 'NoneType' object has no attribute 'status'
+
+A pilha apontou para pytest_runner.py, no método pytest_runtest_logreport, durante a geração de amostras. O LDJSON resultante continha somente uma amostra para dois testes. Portanto, o exit code do Taurus isoladamente não é critério suficiente de aprovação.
+
+A análise do código instalado identificou estado mutável compartilhado no plugin de gravação (_sample, tempos de início/fim e correlação Apiritif). A concorrência entre workers é uma hipótese causal consistente com o erro, mas a intercalação exata que produz o estado None não foi instrumentada. A causa raiz interna permanece não confirmada.
+
+### Contorno validado
+
+Dois processos Taurus independentes, cada um com concorrência 1 e um único módulo pytest, foram executados simultaneamente em 26/11/2026. Cada processo produziu exatamente uma amostra PASSED no respectivo LDJSON e terminou com código zero.
+
+A solução operacional está em taurus-pae-a.yml, taurus-pae-b.yml e run_pae_parallel.sh. O orquestrador valida os dois relatórios separadamente e verifica a ausência de sessões remanescentes no Grid.
+
+### Limites e critério de encerramento
+
+- O contorno não corrige o plugin Taurus nem comprova que todas as versões de pytest-xdist apresentem o mesmo defeito.
+- A configuração original taurus-pae-parallel.yml é preservada como evidência experimental.
+- O débito somente poderá ser encerrado após correção ou confirmação de compatibilidade do plugin e uma execução concorrente que gere amostras completas, individualizadas e consistentes.
+- Até lá, a execução paralela A/B por processos independentes é o procedimento operacional adotado para esta POC.
+
+| Data | Atualização |
+|---|---|
+| 26/11/2026 | Falha de relatório Taurus/pytest-xdist caracterizada; contorno com dois processos Taurus independentes executado com sucesso. |

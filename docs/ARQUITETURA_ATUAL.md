@@ -284,3 +284,42 @@ reprodutibilidade, são necessárias as seguintes atividades:
 Essas atividades são pendências de evolução e não representam
 funcionalidades já implementadas ou homologadas.
 """
+
+
+## 6. Arquitetura-alvo para replicação em ambientes distintos
+
+A arquitetura de referência separa a VM geradora de testes do servidor/ambiente que hospeda a aplicação sob teste. O destino não é fixado ao VMware ESXi: representa o ambiente de hospedagem escolhido pela equipe responsável pela aplicação.
+
+    VM geradora
+    Taurus + pytest + Selenium Client
+                 |
+                 | WebDriver remoto / HTTP
+                 v
+             Selenium Hub
+                 |
+            +----+----+
+            v         v
+       Chrome Node 1  Chrome Node 2
+            |         |
+            +----+----+
+                 |
+                 | HTTPS
+                 v
+    Servidor / ambiente de hospedagem
+            Aplicação sob teste
+
+O ambiente de destino poderá ser desenvolvimento, treinamento ou produção. A POC atual utiliza o PAE Ambulante em desenvolvimento como aplicação sob teste. A aplicação e o ambiente são parâmetros de destino; não devem ser confundidos com o gerador de testes nem com o Selenium Grid.
+
+A aprovação da POC não significa, isoladamente, que a infraestrutura esteja dimensionada para produção em escala. A implantação produtiva deverá ser precedida de dimensionamento e homologação específicos, incluindo capacidade, disponibilidade, segurança, rede, observabilidade e critérios de interrupção.
+
+## 7. Execução paralela funcional PAE
+
+A configuração inicial taurus-pae-parallel.yml, com concurrency 2 e pytest-xdist, fez os dois testes pytest concluírem, mas o plugin de gravação do runner pytest do Taurus falhou ao processar os relatórios com AttributeError: NoneType.status. O LDJSON resultante ficou incompleto; por isso, essa configuração não deve ser usada como executor aprovado.
+
+A alternativa comprovada consiste em dois processos Taurus independentes, cada um com concorrência 1 e um módulo de teste específico. O Selenium Grid continua responsável por alocar as sessões aos Nodes disponíveis. A alocação A/B em Nodes distintos não é forçada pelo teste.
+
+O orquestrador run_pae_parallel.sh inicia ambos os processos, preserva logs e relatórios individuais e exige uma amostra PASSED correspondente a cada caso, além de verificar que não restaram sessões ativas no Grid. A execução exige autenticação manual em cada navegador pelo noVNC.
+
+Esta modalidade comprova execução funcional paralela de duas sessões com autenticação manual. Não é campanha de carga sustentada e não mede latência HTTP, throughput ou capacidade máxima. Os tempos Taurus incluem o fluxo funcional e a espera pela autenticação manual.
+
+Consulte docs/PAE_EXECUCAO_PARALELA.md para instruções e evidências.

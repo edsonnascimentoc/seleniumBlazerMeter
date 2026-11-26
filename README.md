@@ -292,3 +292,39 @@ O indicador `up` representa o sucesso da coleta do endpoint, não a prontidão f
 As exportações pós-importação de 17/11/2026 e seus checksums SHA-256 estão registrados em `dashboards/exports/grafana-2026-11-17/`. Os detalhes de consultas, validação, arquivos e limitações estão em [`dashboards/generated/FASE_03_DASHBOARDS.md`](dashboards/generated/FASE_03_DASHBOARDS.md).
 
 **Estado:** criação, importação, inspeção visual e exportação concluídas. A integração das métricas Taurus e do Selenium Hub, a correlação temporal automatizada e a homologação de capacidade permanecem pendentes. A conclusão da Fase 03 não representa homologação de capacidade máxima do ambiente.
+
+
+## Arquitetura de referência para replicação
+
+A arquitetura separa a VM geradora de testes do ambiente que hospeda a aplicação sob teste:
+
+    VM geradora: Taurus + pytest + Selenium Client
+                 |
+                 | WebDriver remoto / HTTP
+                 v
+             Selenium Hub
+                 |
+            +----+----+
+            v         v
+       Chrome Node 1  Chrome Node 2
+            |         |
+            +----+----+
+                 |
+                 | HTTPS
+                 v
+       Servidor / ambiente de destino
+            Aplicação sob teste
+
+O destino representa o servidor e o ambiente onde a aplicação está hospedada; não é uma dependência obrigatória do VMware ESXi. Poderá corresponder a desenvolvimento, treinamento ou produção, conforme o endereço e a autorização de teste fornecidos pela equipe responsável. Nesta POC, a aplicação sob teste é o PAE Ambulante em desenvolvimento.
+
+A aprovação desta POC valida somente os critérios e a capacidade efetivamente medidos no ambiente de referência. A implantação em escala na produção exige dimensionamento, segurança, disponibilidade, observabilidade e homologação específicos. A campanha histórica contra VMware ESXi não é um teste de carga do PAE.
+
+### Execução funcional paralela do PAE
+
+A execução paralela utiliza dois processos Taurus independentes, um para cada teste pytest. O operador realiza a autenticação manual nos dois navegadores noVNC.
+
+    export BZT_PYTHONPATH="/home/edsonc/.bzt/python-packages/3.13.5"
+    chmod +x run_pae_parallel.sh
+    ./run_pae_parallel.sh
+
+Os relatórios e logs são preservados em artifacts/pae-parallel-*/. Consulte docs/PAE_EXECUCAO_PARALELA.md para pré-requisitos, critérios e limites.
